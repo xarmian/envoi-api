@@ -8,21 +8,43 @@ import { PRIVATE_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 const supabase = createClient(PUBLIC_SUPABASE_URL, PRIVATE_SUPABASE_SERVICE_ROLE_KEY);
 const CACHE_DURATION = 3600; // 1 hour in seconds
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type'
+};
+
+// Handle OPTIONS request for CORS preflight
+export const OPTIONS: RequestHandler = async () => {
+  return new Response(null, {
+    headers: corsHeaders
+  });
+};
+
 // Add POST handler for batch queries
 export const POST: RequestHandler = async ({ request }) => {
   const { names, ignoreCache = false } = await request.json();
 
   if (!Array.isArray(names)) {
-    return json({ error: 'Names must be an array' }, { status: 400 });
+    return json({ error: 'Names must be an array' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   if (names.length > 50) {
-    return json({ error: 'Maximum 50 names per request' }, { status: 400 });
+    return json({ error: 'Maximum 50 names per request' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   // Validate all names
   if (!names.every(name => name.endsWith('.voi'))) {
-    return json({ error: 'Invalid name format. Names must end with .voi' }, { status: 400 });
+    return json({ error: 'Invalid name format. Names must end with .voi' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   return await processNames(names, ignoreCache);
@@ -38,12 +60,18 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const names = name.split(',');
 
     if (names.length > 50) {
-      return json({ error: 'Maximum 50 names per request' }, { status: 400 });
+      return json({ error: 'Maximum 50 names per request' }, { 
+        status: 400,
+        headers: corsHeaders
+      });
     }
 
     // Validate all names
     if (!names.every(n => n.endsWith('.voi'))) {
-      return json({ error: 'Invalid name format. Names must end with .voi' }, { status: 400 });
+      return json({ error: 'Invalid name format. Names must end with .voi' }, { 
+        status: 400,
+        headers: corsHeaders
+      });
     }
 
     return await processNames(names, ignoreCache);
@@ -51,12 +79,18 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
   // Single name request
   if (!name) {
-    return json({ error: 'Name parameter is required' }, { status: 400 });
+    return json({ error: 'Name parameter is required' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   // Validate name format
   if (!name.endsWith('.voi')) {
-    return json({ error: 'Invalid name format. Name must end with .voi' }, { status: 400 });
+    return json({ error: 'Invalid name format. Name must end with .voi' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   try {
@@ -82,6 +116,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
             {
               status: 200,
               headers: {
+                ...corsHeaders,
                 'Cache-Control': `public, max-age=${CACHE_DURATION - cacheAge}`,
                 'X-Cache': 'HIT'
               }
@@ -96,7 +131,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const address = await resolver.getAddressFromName(normalizedName);
 
     if (!address) {
-      return json({ error: 'Name not found' }, { status: 404 });
+      return json({ error: 'Name not found' }, { 
+        status: 404,
+        headers: corsHeaders
+      });
     }
 
     // Update or insert cache
@@ -140,6 +178,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       {
         status: 200,
         headers: {
+          ...corsHeaders,
           'Cache-Control': `public, max-age=${CACHE_DURATION}`,
           'X-Cache': 'MISS'
         }
@@ -148,7 +187,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
   } catch (error) {
     console.error('Error resolving name:', error);
-    return json({ error: 'Internal server error' }, { status: 500 });
+    return json({ error: 'Internal server error' }, { 
+      status: 500,
+      headers: corsHeaders
+    });
   }
 };
 
@@ -216,6 +258,7 @@ async function processNames(names: string[], ignoreCache: boolean) {
       { results },
       {
         headers: {
+          ...corsHeaders,
           'Cache-Control': ignoreCache ? 'no-store' : `public, max-age=${CACHE_DURATION}`,
           'X-Cache': ignoreCache ? 'BYPASS' : 'MIXED'
         }
@@ -224,6 +267,9 @@ async function processNames(names: string[], ignoreCache: boolean) {
 
   } catch (error) {
     console.error('Error resolving names:', error);
-    return json({ error: 'Internal server error' }, { status: 500 });
+    return json({ error: 'Internal server error' }, { 
+      status: 500,
+      headers: corsHeaders
+    });
   }
 } 

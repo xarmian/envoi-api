@@ -195,6 +195,15 @@ The API implements a dual-cache system with the following features:
 
 ### Security
 
+The API implements the following security measures:
+
+#### CORS Policy
+The API has a permissive CORS policy that allows:
+- Origins: `*` (all origins)
+- Methods: `GET`, `POST`, `OPTIONS`
+- Headers: `Content-Type`
+
+#### Row Level Security
 The cache tables implement Row Level Security (RLS) with the following policies:
 - Public read access is allowed for all records
 - Write access (insert/update) is restricted to the service role

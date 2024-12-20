@@ -8,21 +8,43 @@ import { PRIVATE_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 const supabase = createClient(PUBLIC_SUPABASE_URL, PRIVATE_SUPABASE_SERVICE_ROLE_KEY);
 const CACHE_DURATION = 3600; // 1 hour in seconds
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type'
+};
+
+// Handle OPTIONS request for CORS preflight
+export const OPTIONS: RequestHandler = async () => {
+  return new Response(null, {
+    headers: corsHeaders
+  });
+};
+
 // Add POST handler for batch queries
 export const POST: RequestHandler = async ({ request }) => {
   const { addresses, ignoreCache = false } = await request.json();
 
   if (!Array.isArray(addresses)) {
-    return json({ error: 'Addresses must be an array' }, { status: 400 });
+    return json({ error: 'Addresses must be an array' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   if (addresses.length > 50) {
-    return json({ error: 'Maximum 50 addresses per request' }, { status: 400 });
+    return json({ error: 'Maximum 50 addresses per request' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   // Validate all addresses
   if (!addresses.every(addr => /^[A-Z2-7]{58}$/.test(addr))) {
-    return json({ error: 'Invalid Algorand address format' }, { status: 400 });
+    return json({ error: 'Invalid Algorand address format' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   return await processAddresses(addresses, ignoreCache);
@@ -38,12 +60,18 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const addresses = address.split(',');
 
     if (addresses.length > 50) {
-      return json({ error: 'Maximum 50 addresses per request' }, { status: 400 });
+      return json({ error: 'Maximum 50 addresses per request' }, { 
+        status: 400,
+        headers: corsHeaders
+      });
     }
 
     // Validate all addresses
     if (!addresses.every(addr => /^[A-Z2-7]{58}$/.test(addr))) {
-      return json({ error: 'Invalid Algorand address format' }, { status: 400 });
+      return json({ error: 'Invalid Algorand address format' }, { 
+        status: 400,
+        headers: corsHeaders
+      });
     }
 
     return await processAddresses(addresses, ignoreCache);
@@ -51,12 +79,18 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
   // Single address request
   if (!address) {
-    return json({ error: 'Address parameter is required' }, { status: 400 });
+    return json({ error: 'Address parameter is required' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   // Validate Algorand address format
   if (!/^[A-Z2-7]{58}$/.test(address)) {
-    return json({ error: 'Invalid Algorand address format' }, { status: 400 });
+    return json({ error: 'Invalid Algorand address format' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
   }
 
   try {
@@ -80,6 +114,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
             {
               status: 200,
               headers: {
+                ...corsHeaders,
                 'Cache-Control': `public, max-age=${CACHE_DURATION - cacheAge}`,
                 'X-Cache': 'HIT'
               }
@@ -94,7 +129,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const name = await resolver.getNameFromAddress(address);
 
     if (!name) {
-      return json({ error: 'Address not found' }, { status: 404 });
+      return json({ error: 'Address not found' }, { 
+        status: 404,
+        headers: corsHeaders
+      });
     }
 
     // Update or insert cache
@@ -122,6 +160,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       {
         status: 200,
         headers: {
+          ...corsHeaders,
           'Cache-Control': `public, max-age=${CACHE_DURATION}`,
           'X-Cache': 'MISS'
         }
@@ -130,7 +169,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
   } catch (error) {
     console.error('Error resolving address:', error);
-    return json({ error: 'Internal server error' }, { status: 500 });
+    return json({ error: 'Internal server error' }, { 
+      status: 500,
+      headers: corsHeaders
+    });
   }
 };
 
@@ -185,6 +227,7 @@ async function processAddresses(addresses: string[], ignoreCache: boolean) {
       { results },
       {
         headers: {
+          ...corsHeaders,
           'Cache-Control': ignoreCache ? 'no-store' : `public, max-age=${CACHE_DURATION}`,
           'X-Cache': ignoreCache ? 'BYPASS' : 'MIXED'
         }
@@ -193,6 +236,9 @@ async function processAddresses(addresses: string[], ignoreCache: boolean) {
 
   } catch (error) {
     console.error('Error resolving addresses:', error);
-    return json({ error: 'Internal server error' }, { status: 500 });
+    return json({ error: 'Internal server error' }, { 
+      status: 500,
+      headers: corsHeaders
+    });
   }
 } 

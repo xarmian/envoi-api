@@ -112,7 +112,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
               ]
             },
             {
-              status: 200,
+              status: cacheData.name === null ? 404 : 200,
               headers: {
                 ...corsHeaders,
                 'Cache-Control': `public, max-age=${CACHE_DURATION - cacheAge}`,
@@ -128,19 +128,12 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const resolver = envoi.init();
     const name = await resolver.getNameFromAddress(address);
 
-    if (!name) {
-      return json({ error: 'Address not found' }, { 
-        status: 404,
-        headers: corsHeaders
-      });
-    }
-
-    // Update or insert cache
+    // Update or insert cache regardless of whether name was found
     const { error: upsertError } = await supabase
       .from('address_cache')
       .upsert(
         { 
-          name: name.toLowerCase(),
+          name: name ? name.toLowerCase() : null,
           address,
           updated_at: new Date().toISOString()
         },
@@ -149,6 +142,24 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
     if (upsertError) {
       console.error('Error updating cache:', upsertError);
+    }
+
+    if (!name) {
+      return json(
+        { 
+          results: [
+            { address, name: null, cached: false }
+          ]
+        }, 
+        { 
+          status: 404,
+          headers: {
+            ...corsHeaders,
+            'Cache-Control': `public, max-age=${CACHE_DURATION}`,
+            'X-Cache': 'MISS'
+          }
+        }
+      );
     }
 
     return json(
@@ -204,22 +215,20 @@ async function processAddresses(addresses: string[], ignoreCache: boolean) {
 
       // Resolve using envoi
       const name = await resolver.getNameFromAddress(address);
-      if (name) {
-        result.name = name;
-        
-        // Update cache regardless of ignoreCache setting
-        await supabase
-          .from('address_cache')
-          .upsert(
-            { 
-              name: name.toLowerCase(),
-              address,
-              updated_at: new Date().toISOString()
-            },
-            { onConflict: 'address' }
-          );
-      }
+      
+      // Update cache regardless of whether name was found
+      await supabase
+        .from('address_cache')
+        .upsert(
+          { 
+            name: name ? name.toLowerCase() : null,
+            address,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'address' }
+        );
 
+      result.name = name;
       results.push(result);
     }
 

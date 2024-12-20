@@ -114,7 +114,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
               ]
             },
             {
-              status: 200,
+              status: cacheData.address === null ? 404 : 200,
               headers: {
                 ...corsHeaders,
                 'Cache-Control': `public, max-age=${CACHE_DURATION - cacheAge}`,
@@ -130,20 +130,13 @@ export const GET: RequestHandler = async ({ params, url }) => {
     const resolver = envoi.init();
     const address = await resolver.getAddressFromName(normalizedName);
 
-    if (!address) {
-      return json({ error: 'Name not found' }, { 
-        status: 404,
-        headers: corsHeaders
-      });
-    }
-
-    // Update or insert cache
+    // Update or insert name cache regardless of whether address was found
     const { error: upsertError } = await supabase
       .from('name_cache')
       .upsert(
         { 
           name: normalizedName,
-          address,
+          address: address || null,
           updated_at: new Date().toISOString()
         },
         { onConflict: 'name' }
@@ -153,20 +146,40 @@ export const GET: RequestHandler = async ({ params, url }) => {
       console.error('Error updating cache:', upsertError);
     }
 
-    // Also update the address cache to maintain bidirectional caching
-    const { error: addressUpsertError } = await supabase
-      .from('address_cache')
-      .upsert(
-        { 
-          name: normalizedName,
-          address,
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'address' }
-      );
+    // Also update the address cache if an address was found
+    if (address) {
+      const { error: addressUpsertError } = await supabase
+        .from('address_cache')
+        .upsert(
+          { 
+            name: normalizedName,
+            address,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'address' }
+        );
 
-    if (addressUpsertError) {
-      console.error('Error updating address cache:', addressUpsertError);
+      if (addressUpsertError) {
+        console.error('Error updating address cache:', addressUpsertError);
+      }
+    }
+
+    if (!address) {
+      return json(
+        { 
+          results: [
+            { name, address: null, cached: false }
+          ]
+        },
+        { 
+          status: 404,
+          headers: {
+            ...corsHeaders,
+            'Cache-Control': `public, max-age=${CACHE_DURATION}`,
+            'X-Cache': 'MISS'
+          }
+        }
+      );
     }
 
     return json(
@@ -223,22 +236,21 @@ async function processNames(names: string[], ignoreCache: boolean) {
 
       // Resolve using envoi
       const address = await resolver.getAddressFromName(normalizedName);
-      if (address) {
-        result.address = address;
-        
-        // Update name cache
-        await supabase
-          .from('name_cache')
-          .upsert(
-            { 
-              name: normalizedName,
-              address,
-              updated_at: new Date().toISOString()
-            },
-            { onConflict: 'name' }
-          );
+      
+      // Update name cache regardless of whether address was found
+      await supabase
+        .from('name_cache')
+        .upsert(
+          { 
+            name: normalizedName,
+            address: address || null,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'name' }
+        );
 
-        // Also update address cache
+      // Also update address cache if an address was found
+      if (address) {
         await supabase
           .from('address_cache')
           .upsert(
@@ -251,6 +263,7 @@ async function processNames(names: string[], ignoreCache: boolean) {
           );
       }
 
+      result.address = address;
       results.push(result);
     }
 

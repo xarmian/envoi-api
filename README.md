@@ -143,10 +143,11 @@ POST /api/address
 
 The API implements a dual-cache system with the following features:
 - Separate caches for name-to-address and address-to-name lookups
-- Results are cached for 1 hour by default
+- Results are cached for 1 hour by default, including not-found responses
 - Cache can be bypassed using `ignoreCache=true`
 - When bypassing cache, the service will still update both caches with fresh values
 - Bidirectional caching: when a name or address is resolved, both caches are updated
+- Null values are cached to prevent repeated lookups of non-existent names/addresses
 - Cache status is indicated in the `X-Cache` header:
   - `HIT`: Served from cache
   - `MISS`: Freshly resolved
@@ -159,17 +160,18 @@ The API implements a dual-cache system with the following features:
 - Primary key: `name` (lowercase)
 - Stores name-to-address mappings
 - Handles multiple names pointing to the same address
+- Null addresses indicate non-existent names
 - Schema:
   ```sql
   CREATE TABLE name_cache (
       name TEXT PRIMARY KEY,
-      address TEXT NOT NULL,
+      address TEXT NULL,  -- NULL indicates name not found
       updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
   ```
 - Constraints:
   - Name format: Must match `^[a-z0-9-]+\.voi$`
-  - Address format: Must match `^[A-Z2-7]{58}$`
+  - Address format: Must match `^[A-Z2-7]{58}$` when not null
 - Indexes:
   - Primary key on `name`
   - Secondary index on `address`
@@ -178,17 +180,18 @@ The API implements a dual-cache system with the following features:
 - Primary key: `address`
 - Stores address-to-name mappings
 - Maintains the canonical name for each address
+- Null names indicate non-existent addresses
 - Schema:
   ```sql
   CREATE TABLE address_cache (
       address TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
+      name TEXT NULL,  -- NULL indicates address not found
       updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
   ```
 - Constraints:
   - Address format: Must match `^[A-Z2-7]{58}$`
-  - Name format: Must match `^[a-z0-9-]+\.voi$`
+  - Name format: Must match `^[a-z0-9-]+\.voi$` when not null
 - Indexes:
   - Primary key on `address`
   - Secondary index on `name`

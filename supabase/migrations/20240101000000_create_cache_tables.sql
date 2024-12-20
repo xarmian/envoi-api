@@ -5,10 +5,10 @@ DROP TABLE IF EXISTS address_cache CASCADE;
 -- Create name_cache table
 CREATE TABLE name_cache (
     name TEXT PRIMARY KEY,
-    address TEXT NOT NULL,
+    address TEXT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT name_format CHECK (name ~ '^[a-z0-9-]+\.voi$'),
-    CONSTRAINT address_format CHECK (address ~ '^[A-Z2-7]{58}$')
+    CONSTRAINT address_format CHECK (address IS NULL OR address ~ '^[A-Z2-7]{58}$')
 );
 
 -- Create index on address for name_cache (non-unique)
@@ -17,10 +17,10 @@ CREATE INDEX name_cache_address_idx ON name_cache(address);
 -- Create address_cache table
 CREATE TABLE address_cache (
     address TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NULL,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT address_format CHECK (address ~ '^[A-Z2-7]{58}$'),
-    CONSTRAINT name_format CHECK (name ~ '^[a-z0-9-]+\.voi$')
+    CONSTRAINT name_format CHECK (name IS NULL OR name ~ '^[a-z0-9-]+\.voi$')
 );
 
 -- Create index on name for address_cache (non-unique)

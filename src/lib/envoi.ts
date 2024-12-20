@@ -1,6 +1,8 @@
 import algosdk from "algosdk";
 import { CONTRACT } from "ulujs";
 import { queryAddress, resolverAppId, algodUrl, vnsTokenAppId } from "./config";
+import { PUBLIC_ALGORAND_NODE_URL } from "$env/static/public";
+import { PRIVATE_ALGORAND_NODE_TOKEN } from "$env/static/private";
 
 interface EnvoiResolver {
   getNameFromAddress: (address: string) => Promise<string>;
@@ -8,7 +10,7 @@ interface EnvoiResolver {
 }
 
 function init(): EnvoiResolver {
-  const algodClient = new algosdk.Algodv2('', algodUrl, 443);
+  const algodClient = new algosdk.Algodv2(PRIVATE_ALGORAND_NODE_TOKEN, PUBLIC_ALGORAND_NODE_URL, 443);
 
   const ciResolver = new CONTRACT(
     resolverAppId,

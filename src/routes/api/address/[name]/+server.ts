@@ -6,7 +6,7 @@ import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { PRIVATE_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
 const supabase = createClient(PUBLIC_SUPABASE_URL, PRIVATE_SUPABASE_SERVICE_ROLE_KEY);
-const CACHE_DURATION = 3600; // 1 hour in seconds
+const CACHE_DURATION = 7200; // 2 hours in seconds
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

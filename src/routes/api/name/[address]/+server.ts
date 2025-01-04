@@ -1,12 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import envoi from '$lib/envoi-indexer';
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { PRIVATE_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
-const supabase = createClient(PUBLIC_SUPABASE_URL, PRIVATE_SUPABASE_SERVICE_ROLE_KEY);
-const CACHE_DURATION = 3600; // 1 hour in seconds
+const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,7 +21,7 @@ export const OPTIONS: RequestHandler = async () => {
 
 // Add POST handler for batch queries
 export const POST: RequestHandler = async ({ request }) => {
-  const { addresses, ignoreCache = false } = await request.json();
+  const { addresses } = await request.json();
 
   if (!Array.isArray(addresses)) {
     return json({ error: 'Addresses must be an array' }, { 
@@ -47,37 +45,31 @@ export const POST: RequestHandler = async ({ request }) => {
     });
   }
 
-  return await processAddresses(addresses, ignoreCache);
+  try {
+    const { data, error } = await supabase
+      .rpc('envoi_resolve_address', {
+        p_addresses: addresses.join(',')
+      });
+
+    if (error) throw error;
+
+    return json(
+      { results: data },
+      { headers: corsHeaders }
+    );
+  } catch (error) {
+    console.error('Error resolving addresses:', error);
+    return json({ error: 'Internal server error' }, { 
+      status: 500,
+      headers: corsHeaders
+    });
+  }
 };
 
-// Update GET handler to support comma-separated addresses
-export const GET: RequestHandler = async ({ params, url }) => {
+// Handle single or comma-separated address lookup
+export const GET: RequestHandler = async ({ params }) => {
   const { address } = params;
-  const ignoreCache = url.searchParams.get('ignoreCache') === 'true';
 
-  // Check if it's a batch request
-  if (address.includes(',')) {
-    const addresses = address.split(',');
-
-    if (addresses.length > 50) {
-      return json({ error: 'Maximum 50 addresses per request' }, { 
-        status: 400,
-        headers: corsHeaders
-      });
-    }
-
-    // Validate all addresses
-    if (!addresses.every(addr => /^[A-Z2-7]{58}$/.test(addr))) {
-      return json({ error: 'Invalid Algorand address format' }, { 
-        status: 400,
-        headers: corsHeaders
-      });
-    }
-
-    return await processAddresses(addresses, ignoreCache);
-  }
-
-  // Single address request
   if (!address) {
     return json({ error: 'Address parameter is required' }, { 
       status: 400,
@@ -85,8 +77,18 @@ export const GET: RequestHandler = async ({ params, url }) => {
     });
   }
 
-  // Validate Algorand address format
-  if (!/^[A-Z2-7]{58}$/.test(address)) {
+  // Handle comma-separated addresses
+  const addresses = address.split(',');
+
+  if (addresses.length > 50) {
+    return json({ error: 'Maximum 50 addresses per request' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
+  // Validate all addresses
+  if (!addresses.every(addr => /^[A-Z2-7]{58}$/.test(addr))) {
     return json({ error: 'Invalid Algorand address format' }, { 
       status: 400,
       headers: corsHeaders
@@ -94,88 +96,26 @@ export const GET: RequestHandler = async ({ params, url }) => {
   }
 
   try {
-    // Skip cache check if ignoreCache is true
-    if (!ignoreCache) {
-      const { data: cacheData, error: cacheError } = await supabase
-        .from('address_cache')
-        .select('name, updated_at')
-        .eq('address', address)
-        .single();
+    const { data, error } = await supabase
+      .rpc('envoi_resolve_address', {
+        p_addresses: address
+      });
 
-      if (cacheData && !cacheError) {
-        const cacheAge = Math.floor((Date.now() - new Date(cacheData.updated_at).getTime()) / 1000);
-        if (cacheAge < CACHE_DURATION) {
-          return json(
-            { 
-              results: [
-                { address, name: cacheData.name, cached: true }
-              ]
-            },
-            {
-              status: cacheData.name === null ? 404 : 200,
-              headers: {
-                ...corsHeaders,
-                'Cache-Control': `public, max-age=${CACHE_DURATION - cacheAge}`,
-                'X-Cache': 'HIT'
-              }
-            }
-          );
-        }
-      }
-    }
+    if (error) throw error;
 
-    // If not in cache or expired, resolve using envoi
-    const resolver = envoi.init();
-    const name = await resolver.getNameFromAddress(address);
-
-    // Update or insert cache regardless of whether name was found
-    const { error: upsertError } = await supabase
-      .from('address_cache')
-      .upsert(
-        { 
-          name: name ? name.toLowerCase() : null,
-          address,
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'address' }
-      );
-
-    if (upsertError) {
-      console.error('Error updating cache:', upsertError);
-    }
-
-    if (!name) {
+    if (!data || data.length === 0) {
       return json(
-        { 
-          results: [
-            { address, name: null, cached: false }
-          ]
-        }, 
+        { results: addresses.map(addr => ({ address: addr, name: null, cached: false })) },
         { 
           status: 404,
-          headers: {
-            ...corsHeaders,
-            'Cache-Control': `public, max-age=${CACHE_DURATION}`,
-            'X-Cache': 'MISS'
-          }
+          headers: corsHeaders
         }
       );
     }
 
     return json(
-      { 
-        results: [
-          { address, name, cached: false }
-        ]
-      },
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Cache-Control': `public, max-age=${CACHE_DURATION}`,
-          'X-Cache': 'MISS'
-        }
-      }
+      { results: data.map((result: any) => ({ ...result, cached: false })) },
+      { headers: corsHeaders }
     );
 
   } catch (error) {
@@ -185,69 +125,4 @@ export const GET: RequestHandler = async ({ params, url }) => {
       headers: corsHeaders
     });
   }
-};
-
-// Helper function to process multiple addresses
-async function processAddresses(addresses: string[], ignoreCache: boolean) {
-  try {
-    const results = [];
-    const resolver = envoi.init();
-
-    for (const address of addresses) {
-      let result = { address, name: null as string | null, cached: false };
-
-      // Check cache if not ignoring
-      if (!ignoreCache) {
-        const { data: cacheData, error: cacheError } = await supabase
-          .from('address_cache')
-          .select('name, updated_at')
-          .eq('address', address)
-          .single();
-
-        if (cacheData && !cacheError) {
-          const cacheAge = Math.floor((Date.now() - new Date(cacheData.updated_at).getTime()) / 1000);
-          if (cacheAge < CACHE_DURATION) {
-            results.push({ address, name: cacheData.name, cached: true });
-            continue;
-          }
-        }
-      }
-
-      // Resolve using envoi
-      const name = await resolver.getNameFromAddress(address);
-      
-      // Update cache regardless of whether name was found
-      await supabase
-        .from('address_cache')
-        .upsert(
-          { 
-            name: name ? name.toLowerCase() : null,
-            address,
-            updated_at: new Date().toISOString()
-          },
-          { onConflict: 'address' }
-        );
-
-      result.name = name;
-      results.push(result);
-    }
-
-    return json(
-      { results },
-      {
-        headers: {
-          ...corsHeaders,
-          'Cache-Control': ignoreCache ? 'no-store' : `public, max-age=${CACHE_DURATION}`,
-          'X-Cache': ignoreCache ? 'BYPASS' : 'MIXED'
-        }
-      }
-    );
-
-  } catch (error) {
-    console.error('Error resolving addresses:', error);
-    return json({ error: 'Internal server error' }, { 
-      status: 500,
-      headers: corsHeaders
-    });
-  }
-} 
+}; 

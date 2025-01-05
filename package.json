@@ -14,7 +14,12 @@
 	},
 	"dependencies": {
 		"@supabase/supabase-js": "^2.39.1",
+		"@types/dompurify": "^3.2.0",
 		"algosdk": "^2.7.0",
+		"dompurify": "^3.2.3",
+		"highlight.js": "^11.11.1",
+		"marked": "^15.0.5",
+		"marked-highlight": "^2.2.1",
 		"ulujs": "^0.2.27"
 	},
 	"devDependencies": {

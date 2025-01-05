@@ -11,10 +11,10 @@ A resolver service for VOI (.voi) names and addresses, available at `https://api
 GET https://api.envoi.sh/api/name/[address]
 ```
 
-Resolves an Algorand address to its corresponding VOI name. For multiple addresses, use comma-separated values.
+Resolves a Voi address to its corresponding VOI name. For multiple addresses, use comma-separated values.
 
 **Parameters:**
-- `address` (string): The Algorand address to resolve, or multiple comma-separated addresses (max 50)
+- `address` (string): The Voi address to resolve, or multiple comma-separated addresses (max 50)
 
 **Examples:**
 ```bash
@@ -73,7 +73,7 @@ curl -X POST https://api.envoi.sh/api/name \
 GET https://api.envoi.sh/api/address/[name]
 ```
 
-Resolves a VOI name to its corresponding Algorand address. For multiple names, use comma-separated values.
+Resolves a VOI name to its corresponding Voi address. For multiple names, use comma-separated values.
 
 **Parameters:**
 - `name` (string): The VOI name to resolve (must end in .voi), or multiple comma-separated names (max 50)

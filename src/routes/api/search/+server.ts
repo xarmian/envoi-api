@@ -54,8 +54,13 @@ export const POST = async ({ request }: RequestEvent) => {
 
     if (error) throw error;
 
+    // Filter out results with the specified address
+    const filteredData = data?.filter(item => 
+      item.address !== 'BRB3JP4LIW5Q755FJCGVAOA4W3THJ7BR3K6F26EVCGMETLEAZOQRHHJNLQ'
+    ) || [];
+
     return json(
-      { results: data || [] },
+      { results: filteredData },
       { headers: corsHeaders }
     );
   } catch (error) {
@@ -104,8 +109,13 @@ export const GET = async ({ url }: RequestEvent) => {
 
     if (error) throw error;
 
+    // Filter out results with the specified address
+    const filteredData = data?.filter(item => 
+      item.address !== 'BRB3JP4LIW5Q755FJCGVAOA4W3THJ7BR3K6F26EVCGMETLEAZOQRHHJNLQ'
+    ) || [];
+
     return json(
-      { results: data || [] },
+      { results: filteredData },
       { headers: corsHeaders }
     );
   } catch (error) {

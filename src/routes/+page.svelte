@@ -3,6 +3,7 @@
   import { markedHighlight } from 'marked-highlight';
   import hljs from 'highlight.js';
   import 'highlight.js/styles/github.css';
+  import 'highlight.js/styles/github-dark.css';
   import { onMount } from 'svelte';
   import DOMPurify from 'dompurify';
   import type { MarkedOptions } from 'marked';
@@ -16,12 +17,27 @@
   let parsedContent = '';
   let currentUrl = '';
   let curlCommand = '';
+  let isDarkMode = false;
 
   onMount(async () => {
+    // Load theme preference
+    const savedTheme = localStorage.getItem('theme');
+    isDarkMode = savedTheme === 'dark' || 
+      (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    // Apply initial theme to code blocks
+    document.documentElement.classList.toggle('dark-theme', isDarkMode);
+    
     const response = await fetch('/README.md');
     readme = await response.text();
     updateParsedContent();
   });
+
+  function toggleTheme() {
+    isDarkMode = !isDarkMode;
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark-theme', isDarkMode);
+  }
 
   const options: MarkedOptions = {
     gfm: true,
@@ -123,21 +139,80 @@
   }
 </script>
 
-<div class="app">
+<svelte:head>
+  <title>enVoi Naming Service API</title>
+  <style>
+    /* Light theme (default) code highlighting */
+    pre code.hljs {
+      background: var(--code-bg);
+      color: var(--text-primary);
+    }
+    
+    /* Dark theme code highlighting */
+    :root.dark-theme pre code.hljs {
+      background: var(--code-bg);
+      color: var(--text-primary);
+    }
+
+    /* Hide the default GitHub theme in dark mode */
+    :root.dark-theme .hljs-comment,
+    :root.dark-theme .hljs-quote {
+      color: #8b949e;
+    }
+
+    :root.dark-theme .hljs-keyword,
+    :root.dark-theme .hljs-selector-tag,
+    :root.dark-theme .hljs-type {
+      color: #ff7b72;
+    }
+
+    :root.dark-theme .hljs-string,
+    :root.dark-theme .hljs-doctag {
+      color: #a5d6ff;
+    }
+
+    :root.dark-theme .hljs-title,
+    :root.dark-theme .hljs-section {
+      color: #d2a8ff;
+    }
+
+    :root.dark-theme .hljs-number,
+    :root.dark-theme .hljs-literal,
+    :root.dark-theme .hljs-boolean {
+      color: #79c0ff;
+    }
+
+    :root.dark-theme .hljs-property {
+      color: #79c0ff;
+    }
+  </style>
+</svelte:head>
+
+<div class="app" class:dark={isDarkMode}>
   <header>
-    <h1>enVoi Naming Service API</h1>
-    <nav>
-      <button 
-        class:active={activeTab === 'docs'} 
-        on:click={() => activeTab = 'docs'}>
-        Documentation
-      </button>
-      <button 
-        class:active={activeTab === 'playground'} 
-        on:click={() => activeTab = 'playground'}>
-        API Playground
-      </button>
-    </nav>
+    <div class="header-content">
+      <h1>enVoi Naming Service API</h1>
+      <div class="header-right">
+        <button 
+          class="theme-toggle" 
+          on:click={toggleTheme}
+          title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
+          {isDarkMode ? '☀️' : '🌙'}
+        </button>
+        <nav>
+          <button 
+            class:active={activeTab === 'docs'} 
+            on:click={() => activeTab = 'docs'}>
+            Documentation
+          </button>
+          <button 
+            class:active={activeTab === 'playground'} 
+            on:click={() => activeTab = 'playground'}>
+            API Playground
+          </button>
+        </nav>
+      </div>
+    </div>
   </header>
 
   {#if activeTab === 'docs'}
@@ -229,21 +304,80 @@
 </div>
 
 <style>
+  /* Base theme variables */
+  .app {
+    --bg-primary: #f8f9fa;
+    --bg-secondary: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #4a5568;
+    --border-color: #e2e8f0;
+    --code-bg: #f6f8fa;
+    --highlight-color: #4299e1;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --button-bg: #4299e1;
+    --button-hover: #3182ce;
+    --button-disabled: #a0aec0;
+  }
+
+  /* Dark theme variables */
+  .app.dark {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #a0aec0;
+    --border-color: #404040;
+    --code-bg: #161b22;
+    --highlight-color: #63b3ed;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --button-bg: #63b3ed;
+    --button-hover: #4299e1;
+    --button-disabled: #4a5568;
+  }
+
   .app {
     min-height: 100vh;
-    background-color: #f8f9fa;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .theme-toggle {
+    padding: 0.5rem;
+    font-size: 1.25rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+  }
+
+  .theme-toggle:hover {
+    opacity: 1;
   }
 
   header {
-    background-color: #ffffff;
+    background-color: var(--bg-secondary);
     padding: 2rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px var(--shadow-color);
     margin-bottom: 2rem;
   }
 
   header h1 {
-    margin: 0 0 1rem 0;
-    color: #1a1a1a;
+    margin: 0;
+    color: var(--text-primary);
     font-size: 2.5rem;
   }
 
@@ -256,7 +390,7 @@
     padding: 0.75rem 1.5rem;
     border: none;
     background: none;
-    color: #666;
+    color: var(--text-secondary);
     font-size: 1rem;
     cursor: pointer;
     border-radius: 4px;
@@ -264,32 +398,35 @@
   }
 
   nav button:hover {
-    background-color: #f0f0f0;
+    background-color: var(--code-bg);
   }
 
   nav button.active {
-    color: #000;
-    background-color: #e9ecef;
+    color: var(--text-primary);
+    background-color: var(--code-bg);
     font-weight: 500;
   }
 
-  .container {
+  .container, .playground {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
   }
 
-  .playground {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-
-  .controls {
-    background: white;
+  .markdown-body {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px var(--shadow-color);
+  }
+
+  /* API Playground Styles */
+  .controls {
+    background-color: var(--bg-secondary);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow-color);
     margin-bottom: 2rem;
   }
 
@@ -304,27 +441,31 @@
   label {
     display: block;
     margin-bottom: 0.5rem;
-    color: #4a5568;
+    color: var(--text-secondary);
     font-weight: 500;
   }
 
   select, input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #e2e8f0;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
   }
 
   select:focus, input:focus {
     outline: none;
-    border-color: #4299e1;
+    border-color: var(--highlight-color);
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
   }
 
   .test-button {
-    background-color: #4299e1;
+    width: 100%;
+    background-color: var(--button-bg);
     color: white;
     padding: 0.75rem 1.5rem;
     border: none;
@@ -335,166 +476,20 @@
   }
 
   .test-button:hover:not(:disabled) {
-    background-color: #3182ce;
+    background-color: var(--button-hover);
   }
 
   .test-button:disabled {
-    background-color: #a0aec0;
+    background-color: var(--button-disabled);
     cursor: not-allowed;
-  }
-
-  .response {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .response h3 {
-    margin-top: 0;
-    color: #4a5568;
-  }
-
-  .response pre {
-    margin: 0;
-    padding: 1rem;
-    background-color: #f7fafc;
-    border-radius: 4px;
-    overflow-x: auto;
-  }
-
-  /* GitHub Markdown Styles */
-  .markdown-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    line-height: 1.6;
-    color: #24292e;
-    background-color: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .markdown-body :global(h1) {
-    padding-bottom: 0.3em;
-    font-size: 2em;
-    border-bottom: 1px solid #eaecef;
-  }
-
-  .markdown-body :global(h2) {
-    padding-bottom: 0.3em;
-    font-size: 1.5em;
-    border-bottom: 1px solid #eaecef;
-  }
-
-  .markdown-body :global(h3) {
-    font-size: 1.25em;
-  }
-
-  .markdown-body :global(pre) {
-    padding: 16px;
-    overflow: auto;
-    font-size: 85%;
-    line-height: 1.45;
-    background-color: #f6f8fa;
-    border-radius: 6px;
-  }
-
-  .markdown-body :global(code) {
-    padding: 0.2em 0.4em;
-    margin: 0;
-    font-size: 85%;
-    background-color: rgba(27, 31, 35, 0.05);
-    border-radius: 6px;
-    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
-  }
-
-  .markdown-body :global(pre code) {
-    padding: 0;
-    margin: 0;
-    font-size: 100%;
-    word-break: normal;
-    white-space: pre;
-    background: transparent;
-    border: 0;
-  }
-
-  .markdown-body :global(blockquote) {
-    padding: 0 1em;
-    color: #6a737d;
-    border-left: 0.25em solid #dfe2e5;
-    margin: 0;
-  }
-
-  .markdown-body :global(table) {
-    border-spacing: 0;
-    border-collapse: collapse;
-    margin-bottom: 16px;
-    width: 100%;
-  }
-
-  .markdown-body :global(table th),
-  .markdown-body :global(table td) {
-    padding: 6px 13px;
-    border: 1px solid #dfe2e5;
-  }
-
-  .markdown-body :global(table tr:nth-child(2n)) {
-    background-color: #f6f8fa;
-  }
-
-  .markdown-body :global(img) {
-    max-width: 100%;
-    box-sizing: content-box;
-  }
-
-  .markdown-body :global(p) {
-    margin-top: 0;
-    margin-bottom: 16px;
-  }
-
-  .markdown-body :global(ul),
-  .markdown-body :global(ol) {
-    padding-left: 2em;
-    margin-top: 0;
-    margin-bottom: 16px;
-  }
-
-  .markdown-body :global(li) {
-    margin: 0.25em 0;
-  }
-
-  .markdown-body :global(hr) {
-    height: 0.25em;
-    padding: 0;
-    margin: 24px 0;
-    background-color: #e1e4e8;
-    border: 0;
-  }
-
-  @media (max-width: 768px) {
-    .container, .playground {
-      padding: 1rem;
-    }
-
-    header {
-      padding: 1rem;
-    }
-
-    header h1 {
-      font-size: 2rem;
-    }
-
-    .controls, .response {
-      padding: 1rem;
-    }
   }
 
   .example-section {
     margin: 1.5rem 0;
-    padding: 1rem;
-    background-color: #f8f9fa;
-    border-radius: 4px;
-    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    background-color: var(--bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
   }
 
   .example-item {
@@ -509,9 +504,9 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem;
-    background-color: #fff;
-    border: 1px solid #e2e8f0;
+    padding: 1rem;
+    background-color: var(--code-bg);
+    border: 1px solid var(--border-color);
     border-radius: 4px;
     overflow-x: auto;
   }
@@ -520,7 +515,7 @@
     flex: 1;
     font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
     font-size: 0.9rem;
-    color: #1a202c;
+    color: var(--text-primary);
   }
 
   .copy-button {
@@ -537,7 +532,108 @@
     opacity: 1;
   }
 
+  .response {
+    background-color: var(--bg-secondary);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px var(--shadow-color);
+  }
+
+  .response h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+  }
+
+  .response pre {
+    margin: 0;
+    padding: 1rem;
+    background-color: var(--code-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+
+  .response pre code {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+  }
+
+  /* Markdown Styles */
+  .markdown-body :global(pre) {
+    background-color: var(--code-bg) !important;
+    border: 1px solid var(--border-color);
+    margin: 1rem 0;
+  }
+
+  .markdown-body :global(code) {
+    background-color: var(--code-bg) !important;
+    color: var(--text-primary) !important;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+
+  .markdown-body :global(pre code) {
+    background-color: transparent !important;
+    padding: 0;
+  }
+
+  .markdown-body :global(h1),
+  .markdown-body :global(h2) {
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .markdown-body :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+
+  .markdown-body :global(th),
+  .markdown-body :global(td) {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+  }
+
+  .markdown-body :global(tr:nth-child(2n)) {
+    background-color: var(--bg-primary);
+  }
+
+  /* Responsive Styles */
   @media (max-width: 768px) {
+    .header-content {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .header-right {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    nav {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .container, .playground {
+      padding: 1rem;
+    }
+
+    header {
+      padding: 1rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+    }
+
+    .controls, .response {
+      padding: 1rem;
+    }
+
     .code-display {
       flex-direction: column;
       align-items: stretch;

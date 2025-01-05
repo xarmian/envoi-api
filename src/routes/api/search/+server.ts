@@ -21,7 +21,7 @@ export const OPTIONS = async () => {
 
 // POST handler for name search
 export const POST = async ({ request }: RequestEvent) => {
-  const { pattern, type = 'contains', limit = 100 } = await request.json();
+  const { pattern, type = 'contains', limit = 100, includes = 'filtered' } = await request.json();
 
   if (!pattern) {
     return json({ error: 'Search pattern is required' }, { 
@@ -44,6 +44,13 @@ export const POST = async ({ request }: RequestEvent) => {
     });
   }
 
+  if (!['filtered', 'all'].includes(includes)) {
+    return json({ error: 'Includes must be one of: filtered, all' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
   try {
     const { data, error } = await supabase
       .rpc('envoi_search_names', {
@@ -54,13 +61,14 @@ export const POST = async ({ request }: RequestEvent) => {
 
     if (error) throw error;
 
-    // Filter out results with the specified address
-    const filteredData = data?.filter(item => 
-      item.address !== 'BRB3JP4LIW5Q755FJCGVAOA4W3THJ7BR3K6F26EVCGMETLEAZOQRHHJNLQ'
-    ) || [];
+    // Only filter if includes !== 'all'
+    const results = includes === 'all' ? data || [] : 
+      data?.filter(item => 
+        item.address !== 'BRB3JP4LIW5Q755FJCGVAOA4W3THJ7BR3K6F26EVCGMETLEAZOQRHHJNLQ'
+      ) || [];
 
     return json(
-      { results: filteredData },
+      { results },
       { headers: corsHeaders }
     );
   } catch (error) {
@@ -77,6 +85,7 @@ export const GET = async ({ url }: RequestEvent) => {
   const pattern = url.searchParams.get('pattern');
   const type = url.searchParams.get('type') || 'contains';
   const limit = parseInt(url.searchParams.get('limit') || '100');
+  const includes = url.searchParams.get('includes') || 'filtered';
 
   if (!pattern) {
     return json({ error: 'Search pattern is required' }, { 
@@ -99,6 +108,13 @@ export const GET = async ({ url }: RequestEvent) => {
     });
   }
 
+  if (!['filtered', 'all'].includes(includes)) {
+    return json({ error: 'Includes must be one of: filtered, all' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
   try {
     const { data, error } = await supabase
       .rpc('envoi_search_names', {
@@ -109,13 +125,14 @@ export const GET = async ({ url }: RequestEvent) => {
 
     if (error) throw error;
 
-    // Filter out results with the specified address
-    const filteredData = data?.filter(item => 
-      item.address !== 'BRB3JP4LIW5Q755FJCGVAOA4W3THJ7BR3K6F26EVCGMETLEAZOQRHHJNLQ'
-    ) || [];
+    // Only filter if includes !== 'all'
+    const results = includes === 'all' ? data || [] : 
+      data?.filter(item => 
+        item.address !== 'BRB3JP4LIW5Q755FJCGVAOA4W3THJ7BR3K6F26EVCGMETLEAZOQRHHJNLQ'
+      ) || [];
 
     return json(
-      { results: filteredData },
+      { results },
       { headers: corsHeaders }
     );
   } catch (error) {

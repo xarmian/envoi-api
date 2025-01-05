@@ -37,8 +37,8 @@ export const POST = async ({ request }: RequestEvent) => {
     });
   }
 
-  if (typeof limit !== 'number' || limit < 1 || limit > 100) {
-    return json({ error: 'Limit must be a number between 1 and 100' }, { 
+  if (typeof limit !== 'number' || limit < 1 || limit > 1000) {
+    return json({ error: 'Limit must be a number between 1 and 1000' }, { 
       status: 400,
       headers: corsHeaders
     });
@@ -87,8 +87,8 @@ export const GET = async ({ url }: RequestEvent) => {
     });
   }
 
-  if (isNaN(limit) || limit < 1 || limit > 100) {
-    return json({ error: 'Limit must be a number between 1 and 100' }, { 
+  if (isNaN(limit) || limit < 1 || limit > 1000) {
+    return json({ error: 'Limit must be a number between 1 and 1000' }, { 
       status: 400,
       headers: corsHeaders
     });

@@ -141,6 +141,30 @@
 
 <svelte:head>
   <title>enVoi Naming Service API</title>
+  <meta name="description" content="A resolver service for VOI (.voi) names and addresses. Lookup Algorand addresses, resolve VOI names, and search the VOI naming system." />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://api.envoi.sh" />
+  <meta property="og:title" content="enVoi Naming Service API" />
+  <meta property="og:description" content="A resolver service for VOI (.voi) names and addresses. Lookup Algorand addresses, resolve VOI names, and search the VOI naming system." />
+  <meta property="og:image" content="https://envoi.sh/og-image.png" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://api.envoi.sh" />
+  <meta name="twitter:title" content="enVoi Naming Service API" />
+  <meta name="twitter:description" content="A resolver service for VOI (.voi) names and addresses. Lookup Algorand addresses, resolve VOI names, and search the VOI naming system." />
+  <meta name="twitter:image" content="https://envoi.sh/og-image.png" />
+  <meta name="twitter:site" content="@envoinames" />
+
+  <!-- Additional SEO -->
+  <meta name="keywords" content="VOI, Algorand, blockchain, naming service, DNS, cryptocurrency, web3" />
+  <meta name="author" content="enVoi" />
+  <link rel="canonical" href="https://api.envoi.sh" />
+  <meta name="robots" content="index, follow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
     /* Light theme (default) code highlighting */
     pre code.hljs {

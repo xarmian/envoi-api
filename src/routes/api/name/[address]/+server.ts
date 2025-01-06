@@ -38,8 +38,8 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 
   // Validate all addresses
-  if (!addresses.every(addr => /^[A-Z2-7]{58}$/.test(addr))) {
-    return json({ error: 'Invalid Algorand address format' }, { 
+  if (!addresses.every(addr => addr && addr.length <= 100)) {
+    return json({ error: 'Invalid identifier format - must be non-empty and <= 100 characters' }, { 
       status: 400,
       headers: corsHeaders
     });
@@ -88,8 +88,8 @@ export const GET: RequestHandler = async ({ params }) => {
   }
 
   // Validate all addresses
-  if (!addresses.every(addr => /^[A-Z2-7]{58}$/.test(addr))) {
-    return json({ error: 'Invalid Algorand address format' }, { 
+  if (!addresses.every(addr => addr && addr.length <= 100)) {
+    return json({ error: 'Invalid identifier format - must be non-empty and <= 100 characters' }, { 
       status: 400,
       headers: corsHeaders
     });

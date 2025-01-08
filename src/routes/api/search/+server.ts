@@ -3,6 +3,18 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { transformAvatarUrl } from '$lib/utils';
+
+interface Metadata {
+  avatar?: string | null;
+  [key: string]: any;
+}
+
+interface SearchResult {
+  address: string;
+  name: string;
+  metadata?: Metadata;
+}
 
 const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
@@ -21,7 +33,7 @@ export const OPTIONS = async () => {
 
 // POST handler for name search
 export const POST = async ({ request }: RequestEvent) => {
-  const { pattern, type = 'contains', limit = 100, includes = 'filtered' } = await request.json();
+  const { pattern, type = 'contains', limit = 100, includes = 'filtered', avatar = 'thumb' } = await request.json();
 
   if (!pattern) {
     return json({ error: 'Search pattern is required' }, { 
@@ -51,6 +63,13 @@ export const POST = async ({ request }: RequestEvent) => {
     });
   }
 
+  if (!['thumb', 'full'].includes(avatar)) {
+    return json({ error: 'Avatar must be one of: thumb, full' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
   try {
     const { data, error } = await supabase
       .rpc('envoi_search_names', {
@@ -62,10 +81,16 @@ export const POST = async ({ request }: RequestEvent) => {
     if (error) throw error;
 
     // Only filter if includes !== 'all'
-    const results = includes === 'all' ? data || [] : 
-      data?.filter(item => 
+    const results = (includes === 'all' ? data || [] : 
+      data?.filter((item: SearchResult) => 
         item.address !== 'BRB3JP4LIW5Q755FJCGVAOA4W3THJ7BR3K6F26EVCGMETLEAZOQRHHJNLQ'
-      ) || [];
+      ) || []).map((item: SearchResult) => ({
+        ...item,
+        metadata: item.metadata ? {
+          ...item.metadata,
+          avatar: transformAvatarUrl(item.metadata?.avatar, 128, avatar === 'full')
+        } : item.metadata
+      }));
 
     return json(
       { results },
@@ -86,6 +111,7 @@ export const GET = async ({ url }: RequestEvent) => {
   const type = url.searchParams.get('type') || 'contains';
   const limit = parseInt(url.searchParams.get('limit') || '100');
   const includes = url.searchParams.get('includes') || 'filtered';
+  const avatar = url.searchParams.get('avatar') || 'thumb';
 
   if (!pattern) {
     return json({ error: 'Search pattern is required' }, { 
@@ -115,6 +141,13 @@ export const GET = async ({ url }: RequestEvent) => {
     });
   }
 
+  if (!['thumb', 'full'].includes(avatar)) {
+    return json({ error: 'Avatar must be one of: thumb, full' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
   try {
     const { data, error } = await supabase
       .rpc('envoi_search_names', {
@@ -126,10 +159,16 @@ export const GET = async ({ url }: RequestEvent) => {
     if (error) throw error;
 
     // Only filter if includes !== 'all'
-    const results = includes === 'all' ? data || [] : 
-      data?.filter(item => 
+    const results = (includes === 'all' ? data || [] : 
+      data?.filter((item: SearchResult) => 
         item.address !== 'BRB3JP4LIW5Q755FJCGVAOA4W3THJ7BR3K6F26EVCGMETLEAZOQRHHJNLQ'
-      ) || [];
+      ) || []).map((item: SearchResult) => ({
+        ...item,
+        metadata: item.metadata ? {
+          ...item.metadata,
+          avatar: transformAvatarUrl(item.metadata?.avatar, 128, avatar === 'full')
+        } : item.metadata
+      }));
 
     return json(
       { results },

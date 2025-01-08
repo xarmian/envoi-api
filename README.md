@@ -1,229 +1,94 @@
-# enVoi Naming Service API
+# enVoi API
 
-A resolver service for VOI (.voi) names and addresses, available at `https://api.envoi.sh`.
+The enVoi API provides resolution and search services for VOI (.voi) names and addresses. For API documentation and usage, visit [api.envoi.sh](https://api.envoi.sh).
 
-## API Endpoints
+## Running Your Own Instance
 
-### Name Resolution
+### Prerequisites
 
-#### Get Name from Address
-```
-GET https://api.envoi.sh/api/name/[address]
-```
+- Node.js 18 or later
+- Mimir (https://github.com/cswenor/mimir)
+- Mimir Functions (not yet documented)
 
-Resolves a Voi address to its corresponding VOI name. For multiple addresses, use comma-separated values.
+### Setup
 
-**Parameters:**
-- `address` (string): The Voi address to resolve, or multiple comma-separated addresses (max 50)
-
-**Examples:**
+1. Clone the repository:
 ```bash
-# Single address lookup
-curl https://api.envoi.sh/api/name/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-
-# Multiple addresses
-curl https://api.envoi.sh/api/name/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA,BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+git clone https://github.com/xarmian/envoi-api.git
+cd envoi-api
 ```
 
-**Response:**
-```json
-{
-  "results": [
-    {
-      "address": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-      "name": "example.voi",
-      "metadata": {
-        "url": "https://example.com",
-        "avatar": "https://example.com/avatar.webp",
-        "com.twitter": "example",
-        "com.github": "example"
-      },
-      "cached": false
-    }
-  ]
-}
-```
-
-#### Batch Address Resolution (POST)
-```
-POST https://api.envoi.sh/api/name
-```
-
-**Request Body:**
-```json
-{
-  "addresses": [
-    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
-  ]
-}
-```
-
-**Example:**
+2. Install dependencies:
 ```bash
-curl -X POST https://api.envoi.sh/api/name \
-  -H "Content-Type: application/json" \
-  -d '{"addresses": ["AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"]}'
+npm install
 ```
 
-### Address Resolution
-
-#### Get Address from Name
-```
-GET https://api.envoi.sh/api/address/[name]
-```
-
-Resolves a VOI name to its corresponding Voi address. For multiple names, use comma-separated values.
-
-**Parameters:**
-- `name` (string): The VOI name to resolve (must end in .voi), or multiple comma-separated names (max 50)
-
-**Examples:**
+3. Create a `.env` file in the root directory:
 ```bash
-# Single name lookup
-curl https://api.envoi.sh/api/address/example.voi
-
-# Multiple names
-curl https://api.envoi.sh/api/address/example1.voi,example2.voi
+PUBLIC_SUPABASE_URL=https://envoi.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-**Response:**
-```json
-{
-  "results": [
-    {
-      "name": "example.voi",
-      "address": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-      "metadata": {
-        "url": "https://example.com",
-        "avatar": "https://example.com/avatar.webp",
-        "com.twitter": "example",
-        "com.github": "example"
-      },
-      "cached": false
-    }
-  ]
-}
-```
+4. Configure Mimir (not yet documented)
 
-#### Batch Name Resolution (POST)
-```
-POST https://api.envoi.sh/api/address
-```
-
-**Request Body:**
-```json
-{
-  "names": [
-    "example1.voi",
-    "example2.voi"
-  ]
-}
-```
-
-**Example:**
+5. Start the development server:
 ```bash
-curl -X POST https://api.envoi.sh/api/address \
-  -H "Content-Type: application/json" \
-  -d '{"names": ["example.voi"]}'
+npm run dev
 ```
 
-### Name Search
+The API will be available at `http://localhost:3000`.
 
-Search for VOI names based on a pattern.
+### Production Deployment
 
-```
-GET https://api.envoi.sh/api/search
-```
+For production deployment:
 
-**Parameters:**
-- `pattern` (string, required): The search pattern to match against names
-- `type` (string, optional): Search type - one of: 'contains', 'starts', 'ends' (default: 'contains')
-- `limit` (number, optional): Maximum number of results to return (default: 100, max: 1000)
-- `includes` (string, optional): Whether to include filtered results - one of: 'filtered', 'all' (default: 'filtered')
-
-**Examples:**
+1. Build the application:
 ```bash
-# Basic search
-curl https://api.envoi.sh/api/search?pattern=voi
-
-# Advanced search
-curl https://api.envoi.sh/api/search?pattern=test&type=starts&limit=50&includes=all
+npm run build
 ```
 
-#### Batch Search (POST)
-```
-POST https://api.envoi.sh/api/search
-```
-
-**Request Body:**
-```json
-{
-  "pattern": "voi",
-  "type": "contains",
-  "limit": 100,
-  "includes": "filtered"
-}
-```
-
-**Example:**
+2. Start the production server:
 ```bash
-curl -X POST https://api.envoi.sh/api/search \
-  -H "Content-Type: application/json" \
-  -d '{"pattern": "abc", "type": "contains", "limit": 100}'
+npm start
 ```
 
-**Response Format:**
-```json
-{
-  "results": [
-    {
-      "name": "example.voi",
-      "address": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-      "metadata": {
-        "url": "https://example.com",
-        "avatar": "https://example.com/avatar.webp",
-        "com.twitter": "example",
-        "com.github": "example"
-      }
-    }
-  ]
-}
+Consider using a process manager like PM2 for production deployments:
+```bash
+npm install -g pm2
+pm2 start build/index.js --name envoi-api
 ```
 
-Note: By default, the search excludes certain system addresses. Use `includes=all` to include all results.
+## Contributing
 
-## Error Responses
+We welcome contributions! Here's how you can help:
 
-### 400 Bad Request
-```json
-{
-  "error": "Name/Address parameter is required"
-}
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests (`npm test`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Development Guidelines
+
+- Follow the existing code style
+- Add tests for new features
+- Update documentation as needed
+- Keep commits focused and atomic
+
+### Testing
+
+Run the test suite:
+```bash
+npm test
 ```
 
-### 404 Not Found
-```json
-{
-  "error": "Name/Address not found"
-}
+Run tests in watch mode during development:
+```bash
+npm run test:watch
 ```
 
-### 500 Internal Server Error
-```json
-{
-  "error": "Internal server error"
-}
-```
+## License
 
-## CORS Support
-
-The API supports Cross-Origin Resource Sharing (CORS) with the following configuration:
-- Allowed Origins: `*` (all origins)
-- Allowed Methods: `GET`, `POST`, `OPTIONS`
-- Allowed Headers: `Content-Type`
-
-## Rate Limiting
-
-- Maximum 50 items per batch request for name and address resolution
-- Search results are limited to 1000 items maximum per request
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -3,6 +3,19 @@ import type { RequestHandler } from './$types';
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { transformAvatarUrl } from '$lib/utils';
+
+interface Metadata {
+  avatar?: string | null;
+  [key: string]: any;
+}
+
+interface AddressResult {
+  name: string;
+  address: string | null;
+  metadata?: Metadata;
+  cached: boolean;
+}
 
 const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
@@ -21,7 +34,7 @@ export const OPTIONS: RequestHandler = async () => {
 
 // Add POST handler for batch queries
 export const POST: RequestHandler = async ({ request }) => {
-  const { names } = await request.json();
+  const { names, avatar = 'thumb' } = await request.json();
 
   if (!Array.isArray(names)) {
     return json({ error: 'Names must be an array' }, { 
@@ -45,6 +58,13 @@ export const POST: RequestHandler = async ({ request }) => {
     });
   }
 
+  if (!['thumb', 'full'].includes(avatar)) {
+    return json({ error: 'Avatar must be one of: thumb, full' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
   try {
     const { data, error } = await supabase
       .rpc('envoi_resolve_name', {
@@ -53,8 +73,16 @@ export const POST: RequestHandler = async ({ request }) => {
 
     if (error) throw error;
 
+    const results = (data || []).map((result: AddressResult) => ({
+      ...result,
+      metadata: result.metadata ? {
+        ...result.metadata,
+        avatar: transformAvatarUrl(result.metadata?.avatar, 128, avatar === 'full')
+      } : result.metadata
+    }));
+
     return json(
-      { results: data },
+      { results },
       { headers: corsHeaders }
     );
   } catch (error) {
@@ -67,8 +95,9 @@ export const POST: RequestHandler = async ({ request }) => {
 };
 
 // Handle single or comma-separated name lookup
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, url }) => {
   const { name } = params;
+  const avatar = url.searchParams.get('avatar') || 'thumb';
 
   if (!name) {
     return json({ error: 'Name parameter is required' }, { 
@@ -95,6 +124,13 @@ export const GET: RequestHandler = async ({ params }) => {
     });
   }
 
+  if (!['thumb', 'full'].includes(avatar)) {
+    return json({ error: 'Avatar must be one of: thumb, full' }, { 
+      status: 400,
+      headers: corsHeaders
+    });
+  }
+
   try {
     const { data, error } = await supabase
       .rpc('envoi_resolve_name', {
@@ -113,8 +149,17 @@ export const GET: RequestHandler = async ({ params }) => {
       );
     }
 
+    const results = data.map((result: AddressResult) => ({
+      ...result,
+      cached: false,
+      metadata: result.metadata ? {
+        ...result.metadata,
+        avatar: transformAvatarUrl(result.metadata?.avatar, 128, avatar === 'full')
+      } : result.metadata
+    }));
+
     return json(
-      { results: data.map((result: any) => ({ ...result, cached: false })) },
+      { results },
       { headers: corsHeaders }
     );
 

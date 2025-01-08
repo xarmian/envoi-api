@@ -153,6 +153,18 @@
 <svelte:head>
   <title>enVoi Naming Service API</title>
   <meta name="description" content="A resolver service for VOI (.voi) names and addresses." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1a1a1a">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@envoinames">
+  <meta name="twitter:creator" content="@envoinames">
+  <meta name="twitter:title" content="enVoi Naming Service API">
+  <meta name="twitter:description" content="A resolver service for VOI (.voi) names and addresses.">
+  <meta name="twitter:image" content="https://api.envoi.sh/android-chrome-512x512.png">
+  <meta property="og:title" content="enVoi Naming Service API">
+  <meta property="og:description" content="A resolver service for VOI (.voi) names and addresses.">
+  <meta property="og:image" content="https://api.envoi.sh/android-chrome-512x512.png">
+  <meta property="og:url" content="https://api.envoi.sh">
 </svelte:head>
 
 <div class="app">

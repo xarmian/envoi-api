@@ -77,7 +77,7 @@ export const POST: RequestHandler = async ({ request }) => {
       ...result,
       metadata: result.metadata ? {
         ...result.metadata,
-        avatar: transformAvatarUrl(result.metadata?.avatar, (avatar === 'small' ? 384 : 128), avatar === 'full')
+        avatar: transformAvatarUrl(result.metadata?.avatar, avatar)
       } : result.metadata
     }));
 
@@ -154,7 +154,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       cached: false,
       metadata: result.metadata ? {
         ...result.metadata,
-        avatar: transformAvatarUrl(result.metadata?.avatar, (avatar === 'small' ? 384 : 128), avatar === 'full')
+        avatar: transformAvatarUrl(result.metadata?.avatar, avatar)
       } : result.metadata
     }));
 

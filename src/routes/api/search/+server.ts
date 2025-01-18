@@ -88,7 +88,7 @@ export const POST = async ({ request }: RequestEvent) => {
         ...item,
         metadata: item.metadata ? {
           ...item.metadata,
-          avatar: transformAvatarUrl(item.metadata?.avatar, (avatar === 'small' ? 384 : 128), avatar === 'full')
+          avatar: transformAvatarUrl(item.metadata?.avatar, avatar)
         } : item.metadata
       }));
 
@@ -166,7 +166,7 @@ export const GET = async ({ url }: RequestEvent) => {
         ...item,
         metadata: item.metadata ? {
           ...item.metadata,
-          avatar: transformAvatarUrl(item.metadata?.avatar, (avatar === 'small' ? 384 : 128), avatar === 'full')
+          avatar: transformAvatarUrl(item.metadata?.avatar, avatar)
         } : item.metadata
       }));
 

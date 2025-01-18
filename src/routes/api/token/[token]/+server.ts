@@ -58,8 +58,8 @@ export const POST: RequestHandler = async ({ request }) => {
     });
   }
 
-  if (!['thumb', 'full'].includes(avatar)) {
-    return json({ error: 'Avatar must be one of: thumb, full' }, { 
+  if (!['thumb', 'small', 'full'].includes(avatar)) {
+    return json({ error: 'Avatar must be one of: thumb, small, full' }, { 
       status: 400,
       headers: corsHeaders
     });
@@ -77,7 +77,7 @@ export const POST: RequestHandler = async ({ request }) => {
       ...result,
       metadata: result.metadata ? {
         ...result.metadata,
-        avatar: transformAvatarUrl(result.metadata?.avatar, 128, avatar === 'full')
+        avatar: transformAvatarUrl(result.metadata?.avatar, (avatar === 'small' ? 384 : 128), avatar === 'full')
       } : result.metadata
     }));
 
@@ -117,15 +117,15 @@ export const GET: RequestHandler = async ({ params, url }) => {
   }
 
   // Validate all tokens are non-empty strings
-  if (!tokenList.every(token => token.length > 0)) {
+  if (!tokenList.every((token: string) => token.length > 0)) {
     return json({ error: 'Invalid token format - must be non-empty strings' }, { 
       status: 400,
       headers: corsHeaders
     });
   }
 
-  if (!['thumb', 'full'].includes(avatar)) {
-    return json({ error: 'Avatar must be one of: thumb, full' }, { 
+  if (!['thumb', 'small', 'full'].includes(avatar)) {
+    return json({ error: 'Avatar must be one of: thumb, small, full' }, { 
       status: 400,
       headers: corsHeaders
     });
@@ -141,7 +141,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
     if (!data || data.length === 0) {
       return json(
-        { results: tokenList.map(token => ({ token, name: null, cached: false })) },
+        { results: tokenList.map((token: string) => ({ token, name: null, cached: false })) },
         { 
           status: 404,
           headers: corsHeaders
@@ -154,7 +154,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       cached: false,
       metadata: result.metadata ? {
         ...result.metadata,
-        avatar: transformAvatarUrl(result.metadata?.avatar, 128, avatar === 'full')
+        avatar: transformAvatarUrl(result.metadata?.avatar, (avatar === 'small' ? 384 : 128), avatar === 'full')
       } : result.metadata
     }));
 

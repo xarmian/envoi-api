@@ -151,7 +151,7 @@
         {
           name: 'avatar',
           type: 'string',
-          description: 'Avatar URL format (thumb or full)',
+          description: 'Avatar URL format (thumb, small, or full)',
           default: 'thumb'
         }
       ],

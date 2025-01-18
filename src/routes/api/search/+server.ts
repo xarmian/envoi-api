@@ -63,8 +63,8 @@ export const POST = async ({ request }: RequestEvent) => {
     });
   }
 
-  if (!['thumb', 'full'].includes(avatar)) {
-    return json({ error: 'Avatar must be one of: thumb, full' }, { 
+  if (!['thumb', 'small', 'full'].includes(avatar)) {
+    return json({ error: 'Avatar must be one of: thumb, small, full' }, { 
       status: 400,
       headers: corsHeaders
     });
@@ -88,7 +88,7 @@ export const POST = async ({ request }: RequestEvent) => {
         ...item,
         metadata: item.metadata ? {
           ...item.metadata,
-          avatar: transformAvatarUrl(item.metadata?.avatar, 128, avatar === 'full')
+          avatar: transformAvatarUrl(item.metadata?.avatar, (avatar === 'small' ? 384 : 128), avatar === 'full')
         } : item.metadata
       }));
 
@@ -141,8 +141,8 @@ export const GET = async ({ url }: RequestEvent) => {
     });
   }
 
-  if (!['thumb', 'full'].includes(avatar)) {
-    return json({ error: 'Avatar must be one of: thumb, full' }, { 
+  if (!['thumb', 'small', 'full'].includes(avatar)) {
+    return json({ error: 'Avatar must be one of: thumb, small, full' }, { 
       status: 400,
       headers: corsHeaders
     });
@@ -166,7 +166,7 @@ export const GET = async ({ url }: RequestEvent) => {
         ...item,
         metadata: item.metadata ? {
           ...item.metadata,
-          avatar: transformAvatarUrl(item.metadata?.avatar, 128, avatar === 'full')
+          avatar: transformAvatarUrl(item.metadata?.avatar, (avatar === 'small' ? 384 : 128), avatar === 'full')
         } : item.metadata
       }));
 

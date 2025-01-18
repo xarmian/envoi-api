@@ -23,7 +23,7 @@
         {
           name: 'address',
           type: 'string',
-          description: 'The Voi address to resolve',
+          description: 'The Voi address to resolve, or a comma-separated list of addresses',
           required: true
         },
         {
@@ -59,7 +59,7 @@
         {
           name: 'name',
           type: 'string',
-          description: 'The VOI name to resolve (must end in .voi)',
+          description: 'The VOI name to resolve (must end in .voi), or a comma-separated list of names',
           required: true
         },
         {
@@ -84,6 +84,44 @@
     "cached": false
   }]
 }`
+      }
+    },
+    {
+      title: 'Token ID Resolution',
+      path: '/api/token/[token]',
+      method: 'GET',
+      description: 'Get name, owner, and metadata for a given token ID.',
+      endpoint: 'token',
+      parameters: [
+        {
+          name: 'token_id',
+          type: 'string',
+          description: 'The token ID to resolve, or a comma-separated list of token IDs',
+          required: true
+        },
+        {
+          name: 'avatar',
+          type: 'string',
+          description: 'Avatar URL format (thumb or full)',
+          default: 'thumb'
+        }
+      ],
+      example: {
+        request: 'GET /api/token/80067632360305829899847207196844336417360777167721505904064743996533051131418',
+        response: `{
+          "results": [{
+            "token_id": "80067632360305829899847207196844336417360777167721505904064743996533051131418",
+            "name": "example.voi",
+            "address": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "metadata": {
+              "url": "https://example.com",
+              "avatar": "https://example.com/avatar.webp",
+              "com.twitter": "example",
+              "com.github": "example"
+            },
+            "cached": false
+          }]
+        }`
       }
     },
     {
@@ -132,44 +170,6 @@
     "cached": false
   }]
 }`
-      }
-    },
-    {
-      title: 'Token ID Resolution',
-      path: '/api/token/[token]',
-      method: 'GET',
-      description: 'Get name, owner, and metadata for a given token ID.',
-      endpoint: 'token',
-      parameters: [
-        {
-          name: 'token_id',
-          type: 'string',
-          description: 'The token ID to resolve',
-          required: true
-        },
-        {
-          name: 'avatar',
-          type: 'string',
-          description: 'Avatar URL format (thumb or full)',
-          default: 'thumb'
-        }
-      ],
-      example: {
-        request: 'GET /api/token/80067632360305829899847207196844336417360777167721505904064743996533051131418',
-        response: `{
-          "results": [{
-            "token_id": "80067632360305829899847207196844336417360777167721505904064743996533051131418",
-            "name": "example.voi",
-            "address": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            "metadata": {
-              "url": "https://example.com",
-              "avatar": "https://example.com/avatar.webp",
-              "com.twitter": "example",
-              "com.github": "example"
-            },
-            "cached": false
-          }]
-        }`
       }
     }
   ];
@@ -243,6 +243,7 @@
             <div class="version">
               <h3>Recent Changes</h3>
               <ul>
+                <li>2025-01-18: Added support for token ID resolution. See <b>Try It</b> tab for example.</li>
                 <li>2025-01-07: Added support for avatar image size control through the <code>avatar</code> parameter. Supported URLs will be transformed to a 128x128px thumbnail by default. You can specify <code>avatar=full</code> for full-size avatar images. See <b>Try It</b> tab for example.</li>
               </ul>
             </div>

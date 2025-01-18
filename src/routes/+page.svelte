@@ -133,6 +133,44 @@
   }]
 }`
       }
+    },
+    {
+      title: 'Token ID Resolution',
+      path: '/api/token/[token]',
+      method: 'GET',
+      description: 'Get name, owner, and metadata for a given token ID.',
+      endpoint: 'token',
+      parameters: [
+        {
+          name: 'token_id',
+          type: 'string',
+          description: 'The token ID to resolve',
+          required: true
+        },
+        {
+          name: 'avatar',
+          type: 'string',
+          description: 'Avatar URL format (thumb or full)',
+          default: 'thumb'
+        }
+      ],
+      example: {
+        request: 'GET /api/token/80067632360305829899847207196844336417360777167721505904064743996533051131418',
+        response: `{
+          "results": [{
+            "token_id": "80067632360305829899847207196844336417360777167721505904064743996533051131418",
+            "name": "example.voi",
+            "address": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "metadata": {
+              "url": "https://example.com",
+              "avatar": "https://example.com/avatar.webp",
+              "com.twitter": "example",
+              "com.github": "example"
+            },
+            "cached": false
+          }]
+        }`
+      }
     }
   ];
 

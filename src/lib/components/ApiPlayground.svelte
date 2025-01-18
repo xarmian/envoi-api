@@ -2,6 +2,7 @@
   export let selectedEndpoint: string | undefined = undefined;
   let address = '';
   let name = '';
+  let token_id = '';
   let pattern = '';
   let searchType = 'contains';
   let limit = 100;
@@ -31,6 +32,8 @@
         if (avatar === 'full') searchParams.set('avatar', avatar);
         const queryString = searchParams.toString();
         return url + `search${queryString ? `?${queryString}` : ''}`;
+      case 'token':
+        return url + `token/${token_id}${avatarParam}`;
       default:
         return url;
     }
@@ -125,6 +128,7 @@ func main() {
           <option value="name">Name Resolution (address to name)</option>
           <option value="address">Address Resolution (name to address)</option>
           <option value="search">Name Search (search for names)</option>
+          <option value="token">Token ID Resolution (token ID to name)</option>
         </select>
       </div>
 
@@ -145,6 +149,15 @@ func main() {
             id="name"
             bind:value={name} 
             placeholder="Enter .voi name" />
+        </div>
+      {:else if actualEndpoint === 'token'}
+        <div class="input-group">
+          <label for="token_id">Token ID</label>
+          <input 
+            type="text" 
+            id="token_id"
+            bind:value={token_id} 
+            placeholder="Enter token ID" />
         </div>
       {:else}
         <div class="input-group">

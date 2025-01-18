@@ -17,7 +17,7 @@
 
   $: requestUrl = (() => {
     let url = 'https://api.envoi.sh/api/';
-    const avatarParam = avatar === 'full' ? `?avatar=${avatar}` : '';
+    const avatarParam = avatar !== 'thumb' ? `?avatar=${avatar}` : '';
     
     switch (actualEndpoint) {
       case 'name':
@@ -29,7 +29,7 @@
         if (pattern) searchParams.set('pattern', pattern);
         if (searchType !== 'contains') searchParams.set('type', searchType);
         if (limit !== 100) searchParams.set('limit', limit.toString());
-        if (avatar === 'full') searchParams.set('avatar', avatar);
+        if (avatar !== 'thumb') searchParams.set('avatar', avatar);
         const queryString = searchParams.toString();
         return url + `search${queryString ? `?${queryString}` : ''}`;
       case 'token':
@@ -192,6 +192,7 @@ func main() {
         <label for="avatar">Avatar Size</label>
         <select id="avatar" bind:value={avatar}>
           <option value="thumb">Thumbnail (128px)</option>
+          <option value="small">Small (480px)</option>
           <option value="full">Original Size</option>
         </select>
       </div>

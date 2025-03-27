@@ -9,6 +9,8 @@ interface EnvoiResolver {
   getAddressFromName: (name: string) => Promise<string>;
 }
 
+type HashType = "name" | "all";
+
 function init(): EnvoiResolver {
   const algodClient = new algosdk.Algodv2(PRIVATE_ALGORAND_NODE_TOKEN, PUBLIC_ALGORAND_NODE_URL, 443);
 
@@ -112,15 +114,31 @@ async function namehash(name: string): Promise<Uint8Array> {
     return new Uint8Array(32); // Return 32 bytes of zeros for empty name
   }
 
+  const specialTlds = ["reverse"];
+
   // Split the name into labels and reverse them
   const labels = name.split(".").reverse();
 
+  // Force hashType to "all" if TLD is "reverse"
+  let hashType: HashType = "name";
+  if (labels[0] === "reverse") {
+    hashType = "all";
+  }
+  
   // Start with empty hash (32 bytes of zeros)
   let node = new Uint8Array(32);
 
   // Hash each label
   for (const label of labels) {
     if (label) {
+       if (hashType === "name") {
+        const labelBytes = new TextEncoder().encode(label);
+        const labelHash = await sha256(labelBytes);
+        const combined = new Uint8Array(labelHash.length + node.length);
+        combined.set(node);
+        combined.set(labelHash, node.length);
+        node = await sha256(combined);
+      } else {
       // Skip empty labels
       // Hash the label
       const labelBytes = new TextEncoder().encode(label);
@@ -133,6 +151,7 @@ async function namehash(name: string): Promise<Uint8Array> {
       combined.set(node);
       combined.set(labelHash, node.length);
       node = await sha256(combined);
+      }
     }
   }
 
